@@ -39,7 +39,7 @@ In this assignment you will practice putting together a simple image classificat
 
 You can work on the assignment in one of two ways: **remotely** on Google Colaboratory or **locally** on your own machine.
 
-**Regardless of the method chosen, ensure you have followed the [setup instructions](/setup-instructions) before proceeding.**
+**Regardless of the method chosen, ensure you have followed the [setup instructions](./setup_instructions.md) before proceeding.**
 
 #### Option A: Google Colaboratory (Recommended)
 
