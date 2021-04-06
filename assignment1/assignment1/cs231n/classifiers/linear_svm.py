@@ -36,13 +36,18 @@ def svm_loss_naive(W, X, y, reg):
             margin = scores[j] - correct_class_score + 1 # note delta = 1
             if margin > 0:
                 loss += margin
+                dW[:,j] += X[i]
+                dW[:,y[i]] -= X[i]
 
     # Right now the loss is a sum over all training examples, but we want it
     # to be an average instead so we divide by num_train.
     loss /= num_train
+    dW /= num_train
 
     # Add regularization to the loss.
     loss += reg * np.sum(W * W)
+    # Add regularization to the gradient
+    dW += 2 * reg * W  
 
     #############################################################################
     # TODO:                                                                     #
@@ -55,7 +60,7 @@ def svm_loss_naive(W, X, y, reg):
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
     pass
-
+            
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     
     return loss, dW
@@ -78,7 +83,14 @@ def svm_loss_vectorized(W, X, y, reg):
     #############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    score = np.matmul(X, W)
+    num_train = X.shape[0]
+    correct_class_score = score[ np.array(range(num_train)) , y ]
+    dscore = score - np.expand_dims(correct_class_score,-1) + 1
+    dscore[dscore <= 0] = 0
+    loss = np.sum(dscore) - num_train
+    loss /= num_train
+    loss += reg * np.sum(W*W)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
@@ -93,7 +105,11 @@ def svm_loss_vectorized(W, X, y, reg):
     #############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    dscore[dscore > 0] = 1
+    dscore[np.array(range(num_train)), y] = -(np.sum(dscore, axis=1) - 1)
+    dW = np.matmul(np.transpose(X), dscore)
+    dW /= num_train 
+    dW += 2 * reg * W
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 

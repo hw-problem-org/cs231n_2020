@@ -6,7 +6,17 @@
 - [Course Website (2017)](http://cs231n.stanford.edu/2017/)
 
 ## Status
-1. [ ] [Assignment 1](./assignment1/assignment1.md)
-2. [ ] [Assignment 2](./assignment2/assignment2.md)
+1. [Assignment 1](./assignment1/assignment1.md)
+    * [x] k-Nearest Neighbor classifier
+    * [x] Training a Support Vector Machine
+    * [ ] Implement a Softmax classifier
+    * [ ] Two-Layer Neural Network
+    * [ ] Higher Level Representations: Image Features
 
+2. [Assignment 2](./assignment2/assignment2.md)
+    * [ ] Fully-connected Neural Network
+    * [ ] Batch Normalization
+    * [ ] Dropout
+    * [ ] Convolutional Networks
+    * [ ] PyTorch / TensorFlow on CIFAR-10
 
