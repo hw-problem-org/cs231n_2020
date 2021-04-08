@@ -33,7 +33,29 @@ def softmax_loss_naive(W, X, y, reg):
     #############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    N  = X.shape[0]
+    C = W.shape[1]
+
+    for i in range(N):
+      score = W.T @ X[i,:]
+      pdf = np.e ** score # Un-normalized pdf
+      pdf /= pdf.sum() # Normalized pdf
+      loss_i = -np.log(pdf[y[i]]) # Loss due to ith training example
+      dW_i = np.zeros_like(W) # Gradient due to ith training example
+      for j in range(C):
+        if j == y[i]:
+          dW_i[:,j] = (pdf[j] - 1) * X[i,:]
+        else:
+          dW_i[:,j] = pdf[j] * X[i,:]
+
+      loss += loss_i    
+      dW += dW_i
+
+    loss /= N
+    dW /= N
+
+    loss += reg * np.sum(W * W) # Regularization for loss
+    dW += 2 * reg * W # Regularization for gradient
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
@@ -58,7 +80,25 @@ def softmax_loss_vectorized(W, X, y, reg):
     #############################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    N  = X.shape[0]
+
+    score = X @ W
+    pdf = np.e ** score
+    pdf = (pdf.T / np.sum(pdf, axis=1)).T
+
+    p_true = pdf[np.arange(N), y]
+    loss = np.sum( -np.log(p_true) )
+    
+    pdf[np.arange(N), y] -= 1 # Amending pdf for dW calculation
+    dW = X.T @ pdf
+
+    loss /= N
+    dW /= N
+
+    loss += reg * np.sum(W * W) # Regularization for loss
+    dW += 2 * reg * W # Regularization for gradient
+
+
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 

@@ -9,7 +9,7 @@
 1. [Assignment 1](./assignment1/assignment1.md)
     * [x] k-Nearest Neighbor classifier
     * [x] Training a Support Vector Machine
-    * [ ] Implement a Softmax classifier
+    * [x] Implement a Softmax classifier
     * [ ] Two-Layer Neural Network
     * [ ] Higher Level Representations: Image Features
 
