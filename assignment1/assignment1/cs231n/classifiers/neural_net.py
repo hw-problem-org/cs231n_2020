@@ -80,7 +80,9 @@ class TwoLayerNet(object):
         #############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        scores = (X @ W1) + b1 # First layer
+        scores[scores < 0] = 0 # ReLU non-linearity
+        scores = (scores @ W2) + b2 # # Second layer
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
@@ -98,7 +100,14 @@ class TwoLayerNet(object):
         #############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        pdf = np.e ** scores
+        pdf = (pdf.T / np.sum(pdf, axis=1)).T
+
+        p_true = pdf[np.arange(N), y]
+        loss = np.sum( -np.log(p_true) )
+
+        loss /= N
+        loss += reg * (np.sum(W1 * W1) + np.sum(W2 * W2))
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
@@ -111,7 +120,40 @@ class TwoLayerNet(object):
         #############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        grads['W1'] = np.zeros_like(W1)
+        grads['W2'] = np.zeros_like(W2)
+        grads['b1'] = np.zeros_like(b1)
+        grads['b2'] = np.zeros_like(b2)
+
+        for i in range(N):
+          L1_i = (W1.T @ X[i]) + b1
+          I_i = L1_i.copy()
+          I_i[I_i<=0] = 0
+          I_i[I_i>0] = 1
+
+          gb1_i = np.zeros_like(b1)
+          gb1_i = I_i * ((W2 @ pdf[i]) - W2[:,y[i]])
+          gW1_i = np.outer(X[i], gb1_i)
+          grads['b1'] += gb1_i
+          grads['W1'] += gW1_i
+
+          gb2_i = np.zeros_like(b2)
+          gb2_i = pdf[i]
+          gb2_i[y[i]] -= 1
+          L1_i_max = L1_i.copy()
+          L1_i_max[L1_i_max < 0] = 0 
+          gW2_i = np.outer(L1_i_max, gb2_i)
+          grads['b2'] += gb2_i
+          grads['W2'] += gW2_i
+
+        grads['W1'] /= N
+        grads['W2'] /= N
+        grads['b1'] /= N
+        grads['b2'] /= N
+
+        grads['W1'] += 2 * reg * W1
+        grads['W2'] += 2 * reg * W2
+
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
@@ -156,7 +198,9 @@ class TwoLayerNet(object):
             #########################################################################
             # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-            pass
+            batch_index = np.random.choice(num_train, batch_size)
+            X_batch = X[batch_index]
+            y_batch = y[batch_index]
 
             # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
@@ -172,7 +216,10 @@ class TwoLayerNet(object):
             #########################################################################
             # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-            pass
+            self.params['b1'] -= learning_rate * grads['b1']
+            self.params['W1'] -= learning_rate * grads['W1']
+            self.params['b2'] -= learning_rate * grads['b2']
+            self.params['W2'] -= learning_rate * grads['W2']
 
             # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
@@ -218,7 +265,8 @@ class TwoLayerNet(object):
         ###########################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        scores = self.loss(X)
+        y_pred = np.argmax(scores, axis=1)
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
