@@ -11,7 +11,7 @@
     * [x] Training a Support Vector Machine
     * [x] Implement a Softmax classifier
     * [x] Two-Layer Neural Network
-    * [ ] Higher Level Representations: Image Features
+    * [x] Higher Level Representations: Image Features
 
 2. [Assignment 2](./assignment2/assignment2.md)
     * [ ] Fully-connected Neural Network
