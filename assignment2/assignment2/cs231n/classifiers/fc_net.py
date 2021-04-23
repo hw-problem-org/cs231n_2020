@@ -207,7 +207,18 @@ class FullyConnectedNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        for l in range(self.num_layers):
+          if(l == 0):
+            pre_layer_dim = input_dim
+            next_layer_dim = hidden_dims[l]
+          elif(l == self.num_layers-1):
+            pre_layer_dim = hidden_dims[l-1]
+            next_layer_dim = num_classes
+          else:
+            pre_layer_dim = hidden_dims[l-1] 
+            next_layer_dim = hidden_dims[l]
+          self.params[f'W{l+1}'] = np.random.normal(0, weight_scale, (pre_layer_dim, next_layer_dim))
+          self.params[f'b{l+1}'] = np.zeros(next_layer_dim)
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
@@ -269,7 +280,17 @@ class FullyConnectedNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        out= X.copy()
+        caches = []
+        for l in range(self.num_layers):
+          af_cache = None
+          relu_cache = None
+          if(l == self.num_layers-1):
+            scores, af_cache = affine_forward(out, self.params[f'W{l+1}'], self.params[f'b{l+1}'])
+          else:
+            out, af_cache = affine_forward(out, self.params[f'W{l+1}'], self.params[f'b{l+1}'])
+            out, relu_cache = relu_forward(out)
+          caches.append({"af_cache": af_cache, "relu_cache": relu_cache})
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
@@ -287,8 +308,8 @@ class FullyConnectedNet(object):
         # data loss using softmax, and make sure that grads[k] holds the gradients #
         # for self.params[k]. Don't forget to add L2 regularization!               #
         #                                                                          #
-        # When using batch/layer normalization, you don't need to regularize the scale   #
-        # and shift parameters.                                                    #
+        # When using batch/layer normalization, you don't need to regularize the   #
+        # scale and shift parameters.                                              #
         #                                                                          #
         # NOTE: To ensure that your implementation matches ours and you pass the   #
         # automated tests, make sure that your L2 regularization includes a factor #
@@ -296,7 +317,17 @@ class FullyConnectedNet(object):
         ############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        loss, dout = softmax_loss(scores, y)
+        dout, grads[f'W{self.num_layers}'], grads[f'b{self.num_layers}'] \
+        = affine_backward(dout, caches[self.num_layers-1]["af_cache"])
+        loss += 0.5 * self.reg * (self.params[f'W{self.num_layers}']**2).sum()
+        grads[f'W{self.num_layers}'] += self.reg * self.params[f'W{self.num_layers}']
+        for l in reversed(range(self.num_layers - 1)):
+          dout = relu_backward(dout, caches[l]["relu_cache"])
+          dout, grads[f'W{l+1}'], grads[f'b{l+1}'] = affine_backward(dout, caches[l]["af_cache"])
+
+          loss += 0.5 * self.reg * (self.params[f'W{l+1}']**2).sum()
+          grads[f'W{l+1}'] += self.reg * self.params[f'W{l+1}']
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################

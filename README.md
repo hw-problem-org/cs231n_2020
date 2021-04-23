@@ -14,7 +14,7 @@
     * [x] Higher Level Representations: Image Features
 
 2. [Assignment 2](./assignment2/assignment2.md)
-    * [ ] Fully-connected Neural Network
+    * [x] Fully-connected Neural Network
     * [ ] Batch Normalization
     * [ ] Dropout
     * [ ] Convolutional Networks
