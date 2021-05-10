@@ -567,7 +567,29 @@ def conv_forward_naive(x, w, b, conv_param):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    N,C,H,W = x.shape
+    F,_,FH,FW = w.shape
+    p = conv_param['pad']
+    s = conv_param['stride']
+
+    H_pad = H + 2*p
+    W_pad = W + 2*p
+
+    H_conv = int(1 + ( (1/s) * (H_pad - FH) ))
+    W_conv = int(1 + ( (1/s) * (W_pad - FW) ))
+
+    out = np.zeros((N, F, H_conv, W_conv))
+    for n in range(N):
+      for f in range(F):
+        img = x[n]
+        img_pad = np.zeros((C,H_pad,W_pad))
+        for c in range(C):
+          img_pad[c] = np.pad(img[c], p)
+        fltr = w[f]
+        for i in range(H_conv):
+          for j in range(W_conv):
+            img_cutout = img_pad[:,i*s:i*s+FH,j*s:j*s+FW]
+            out[n,f,i,j] = np.sum(fltr * img_cutout) + b[f]
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -596,7 +618,52 @@ def conv_backward_naive(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    x, w, _, conv_param = cache
+    N,C,H,W = x.shape
+    F,_,FH,FW = w.shape
+    p = conv_param['pad']
+    s = conv_param['stride']
+
+    H_pad = H + 2*p
+    W_pad = W + 2*p
+
+    H_conv = int(1 + ( (1/s) * (H_pad - FH) ))
+    W_conv = int(1 + ( (1/s) * (W_pad - FW) ))
+
+    dx = np.zeros(x.shape)
+    dw = np.zeros(w.shape)
+    
+    db = np.sum(np.sum(np.sum(dout ,axis=-1) ,axis=-1), axis=0)
+
+    for n in range(N):
+      for f in range(F):
+
+        img = x[n]
+        img_pad = np.zeros((C,H_pad,W_pad))
+        for c in range(C):
+          img_pad[c] = np.pad(img[c], p)
+        fltr = w[f]
+
+        dx_hat = np.zeros((C,H_pad,W_pad))
+        for a in range(H_pad):
+          for b in range(W_pad):
+            I = np.array(list(range(int((a-FH)/s)+1, int(a/s)+1)))
+            I = I[I>=0]
+            I = I[I<H_conv]
+            J = np.array(list(range(int((b-FW)/s)+1, int(b/s)+1)))
+            J = J[J>=0]
+            J = J[J<W_conv]
+            for i in I:
+              for j in J:
+                  dx_hat[:,a,b] += dout[n,f,i,j] * fltr[:,a-i*s,b-j*s]
+        dx[n] += dx_hat[:,p:-p,p:-p]
+
+        for a in range(FH):
+          for b in range(FW):
+            for i in range(H_conv):
+              for j in range(W_conv):
+                dw[f,:,a,b] += dout[n,f,i,j] * img_pad[:,i*s+a,j*s+b]
+
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -630,7 +697,21 @@ def max_pool_forward_naive(x, pool_param):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    N,C,H,W = x.shape
+    FH = pool_param['pool_height']
+    FW = pool_param['pool_width']
+    s = pool_param['stride']
+
+    H_pool = int(1 + ( (1/s) * (H - FH) ))
+    W_pool = int(1 + ( (1/s) * (W - FW) ))
+
+    out = np.zeros((N, C, H_pool, W_pool))
+    for n in range(N):
+      for c in range(C):
+        for i in range(H_pool):
+          for j in range(W_pool):
+            x_cutout = x[n,c,i*s:i*s+FH,j*s:j*s+FW]
+            out[n,c,i,j] = np.amax(x_cutout)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -657,7 +738,26 @@ def max_pool_backward_naive(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    x, pool_param = cache
+    N,C,H,W = x.shape
+    FH = pool_param['pool_height']
+    FW = pool_param['pool_width']
+    s = pool_param['stride']
+
+    H_pool = int(1 + ( (1/s) * (H - FH) ))
+    W_pool = int(1 + ( (1/s) * (W - FW) ))
+
+    dx = np.zeros(x.shape)
+    for n in range(N):
+      for c in range(C):
+        for a in range(H):
+          for b in range(W):
+            for i in range(H_pool):
+              for j in range(W_pool):
+                if( a>=i*s and a<i*s+FH and b>=j*s and b<j*s+FW):
+                  x_cutout = x[n,c,i*s:i*s+FH,j*s:j*s+FW]
+                  if(x[n,c,a,b] == np.amax(x_cutout)):
+                    dx[n,c,a,b] += dout[n,c,i,j]
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -698,8 +798,13 @@ def spatial_batchnorm_forward(x, gamma, beta, bn_param):
     # Your implementation should be very short; ours is less than five lines. #
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
-    pass
+    
+    N, C, H, W = x.shape
+    out = np.swapaxes(x, 1, -1)
+    out = out.reshape(N*W*H, C)
+    out, cache = batchnorm_forward(out, gamma, beta, bn_param)
+    out = out.reshape(N,W,H,C)
+    out = np.swapaxes(out, 1, -1)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -733,7 +838,12 @@ def spatial_batchnorm_backward(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    N, C, H, W = dout.shape
+    dout = np.swapaxes(dout, 1, -1)
+    dout = dout.reshape(N*W*H, C)
+    dx, dgamma, dbeta = batchnorm_backward_alt(dout, cache)
+    dx = dx.reshape(N,W,H,C)
+    dx = np.swapaxes(dx, 1, -1)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -773,7 +883,18 @@ def spatial_groupnorm_forward(x, gamma, beta, G, gn_param):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    N, C, H, W = x.shape
+    out = np.swapaxes(x, 1, -1)
+    out = out.reshape(N*W*H, C)
+    cache = [0]*G
+    G_size = int(C/G)
+    for g in range(G):
+      i = g*G_size
+      j = (g+1)*G_size
+      out[:,i:j], cache[g] = layernorm_forward\
+                    (out[:,i:j], gamma[0,i:j,0,0], beta[0,i:j,0,0], gn_param)
+    out = out.reshape(N,W,H,C)
+    out = np.swapaxes(out, 1, -1)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
@@ -803,7 +924,21 @@ def spatial_groupnorm_backward(dout, cache):
     ###########################################################################
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-    pass
+    N, C, H, W = dout.shape
+    G = len(cache)
+    dx = np.swapaxes(dout, 1, -1)
+    dx = dx.reshape(N*W*H, C)
+    dgamma = np.zeros((1,C,1,1))
+    dbeta = np.zeros((1,C,1,1))
+    G_size = int(C/G)
+    for g in range(G):
+      i = g*G_size
+      j = (g+1)*G_size
+      dx[:,i:j], dgamma[0,i:j,0,0], dbeta[0,i:j:,0,0] =\
+      layernorm_backward(dx[:,i:j], cache[g])
+    
+    dx = dx.reshape(N,W,H,C)
+    dx = np.swapaxes(dx, 1, -1)
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
     ###########################################################################
