@@ -18,5 +18,5 @@
     * [x] Batch Normalization
     * [x] Dropout
     * [x] Convolutional Networks
-    * [ ] PyTorch / TensorFlow on CIFAR-10
+    * [x] PyTorch on CIFAR-10
 
